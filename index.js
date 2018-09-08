@@ -3,48 +3,81 @@
 //Init things
 const AWSregion = 'eu-west-1';  // us-east-1
 const AWS = require('aws-sdk');
+const dateHelper = require('./datehelper');
+const I_dateHelper = new dateHelper();
+const dbTable = 'WorkoutsOfTheDay';
 
-const params = {
-    TableName: 'WorkoutsOfTheDay',
-    Key:{ "workout_id": '1'  }
-};
 
+//Setting up entorno
 AWS.config.update({
     region: AWSregion
 });
 
-function willbecallback(_message){
-	return JSON.stringify(data, null, 2)
+//DB Helper functions
+
+/**
+ * Returns today´s CF workout from the database
+ * */
+async function readTodaysCFWorkout(){
+    try {
+        var id = I_dateHelper.todayDateFormatted()+"CF";
+        const params = {
+            TableName: dbTable,
+            Key:{ "workout_id": id  }
+        };
+        var CFWorkout = readDynamoItem(params);
+        return CFWorkout;
+    }
+    catch(error) {
+        return error;
+    }
 }
 
 
-
-//Dynamo reader
-function readDynamoItem(params) {
-
-   var AWS = require('aws-sdk');
+/**
+ * ReadDynamoItem will return one line of the database. Requires to receive:
+ * - TableName
+ * - workoutid (which is date+sport)
+ * Returns a promise
+ * */
+function readDynamoItem(_params) {
+    var AWS = require('aws-sdk');
     AWS.config.update({region: AWSregion});
-    console.log("entre")
-
-    var documentClient = new AWS.DynamoDB.DocumentClient();
-
-    documentClient.get(params, function(err, data) {
-  		if (err) console.log("Mal"+err);
-  		else console.log("Bien"+data);
+    return new Promise((resolve) => {
+        var documentClient = new AWS.DynamoDB.DocumentClient();
+            documentClient.get(_params, function(err, data) {
+  		if (err) {
+  		    console.log ("error: "+err);
+  		} else {
+  		    var obj = data["Item"];
+  		    resolve(obj);
+  		}
 	});
-
-
+    });
 }
 
-
-exports.handler = (event, context, callback) => {
-    // TODO implement
-    const response = {
-        statusCode: 200,
-        //body: readDynamoItem(params, willbecallback)
+function writeDynamoItem(_item) {
+    let params = {
+        TableName : dbTable,
+        Item: _item
     };
-    console.log("Response", readDynamoItem(params) )
-    callback(null, response);
+    var AWS = require('aws-sdk');
+    AWS.config.update({region: AWSregion});
+    var documentClient = new AWS.DynamoDB.DocumentClient();
+    documentClient.put(params, function(err, data) {
+        console.log(data)
+        if (err) console.log(err);
+        else console.log(data);
+    });
+}
+
+///Entry point
+
+exports.handler = async (event) => {
+    try{
+        console.log("enteres here")
+    }
+    catch(error) {
+        return error;
+    }
 };
-
-
