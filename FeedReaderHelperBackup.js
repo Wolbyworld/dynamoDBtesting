@@ -1,71 +1,8 @@
 //Execute with: lambda-local -l FeedReaderHelper.js -h handler -e input.json -t 20
 
-  function FeedReaderHelper () {
-  const C_dateHelper = require('./datehelper');
-  const dateHelper = new C_dateHelper();
-
-  this.workouts = async function() {
-    let rssText =await RSS2XML();
-    //Prepare CF workout DB Object
-    let CFWorkout = myreadFeed(rssText,CF)
-    var CFWorkout_id = dateHelper.todayDateFormatted()+"CF"
-    var CFCardTittle = CFWorkout[0]
-    var CFCardText = CFWorkout[1]
-    var CFText2Read = spokenResponseBuilder(CFWorkout[0],CFWorkout[1])
-    var CFImgURL = selectRandomeImage();
-    var CFobject = {
-      workout_id:CFWorkout_id,
-      cardTittle:CFCardTittle,
-      cardText:CFCardText,
-      text2read:CFText2Read,
-      imgURL:CFImgURL
-    }
-    //Prepare Performance workout DB Object
-    let PerformanceWorkout = myreadFeed(rssText,CF)
-    var PerformanceWorkout_id = dateHelper.todayDateFormatted()+"Performance"
-    var PerformanceCardTittle = PerformanceWorkout[0]
-    var PerformanceCardText = PerformanceWorkout[1]
-    var PerformanceText2Read = spokenResponseBuilder(PerformanceWorkout[0],PerformanceWorkout[1])
-    var PerformanceImgURL = selectRandomeImage();
-    var Performanceobject = {
-      workout_id:PerformanceWorkout_id,
-      cardTittle:PerformanceCardTittle,
-      cardText:PerformanceCardText,
-      text2read:PerformanceText2Read,
-      imgURL:PerformanceImgURL
-    }
-    //Prepare CFF workout DB Object
-    let CFFWorkout = myreadFeed(rssText,CF)
-    var CFFWorkout_id = dateHelper.todayDateFormatted()+"CFF"
-    var CFFCardTittle = CFFWorkout[0]
-    var CFFCardText = CFFWorkout[1]
-    var CFFText2Read = spokenResponseBuilder(CFFWorkout[0],CFFWorkout[1])
-    var CFFImgURL = selectRandomeImage();
-    var CFFobject = {
-      workout_id:CFFWorkout_id,
-      cardTittle:CFFCardTittle,
-      cardText:CFFCardText,
-      text2read:CFFText2Read,
-      imgURL:CFFImgURL
-    }
-
-    //Create global object
-    var allWods = {
-      CFWod:CFFobject
-      ,PerformanceWod:Performanceobject
-      ,CFFWod:CFFobject
-    }
-    return (allWods);
-  }
-}
-module.exports = FeedReaderHelper;
-
-
-
 //dependences
 let Parser = require('rss-parser');
-let config = require('./configuration');
-const RSSFeed = config.rssURL;
+const RSSFeed = "https://politepol.com/feed/24728";
 
 
 /**
@@ -87,7 +24,14 @@ function spokenResponseBuilder (_wodTitle, _wod) {
   var wodClean = replaceEnglishTerms(_wod.toLowerCase()); 
   var titleClean = replaceEnglishTerms(_wodTitle.toLowerCase())
   wocClean = wodClean.replace('b:','<break time=\"1s\"/> B:')
-  temp = titleClean + "<break time=\"1s\"/>"+ wodClean + "<break time=\"1s\"/>" + config.rePromptText
+  console.log(wodClean.search("b:"))
+  if (nreprompts = 0) {
+      temp = titleClean + "<break time=\"1s\"/>"+ wodClean + "<break time=\"1s\"/>" + rePromptText1
+      nreprompts = nreprompts + 1
+  } else {
+      temp = titleClean + "<break time=\"1s\"/>"+ wodClean + "<break time=\"1s\"/>" + rePromptText2
+      nreprompts = nreprompts + 1
+  }
   return  temp
 }
 
@@ -162,7 +106,7 @@ function replaceEnglishTerms(_wod){
 }
 
 /**
-Selects a random image to return with the cards. Returns URL
+Selects a random image to return with the cards
 **/
 function selectRandomeImage(){
     const ImgArr = motivationalImages;
@@ -233,7 +177,7 @@ const motivationalImages = [
 ]
 
 
-/**
+
 exports.handler = async (event) => {
     try{
         console.log(await RSS2XML())
@@ -241,4 +185,4 @@ exports.handler = async (event) => {
     catch(error) {
         return error;
     }
-};**/
+};

@@ -1,11 +1,14 @@
 // Following: https://github.com/alexa/alexa-cookbook/blob/master/aws/Amazon-DynamoDB/read/src/index.js
 
 //Init things
-const AWSregion = 'eu-west-1';  // us-east-1
+const config = require('./configuration')
 const AWS = require('aws-sdk');
 const dateHelper = require('./datehelper');
 const I_dateHelper = new dateHelper();
-const dbTable = 'WorkoutsOfTheDay';
+const AWSregion = config.awsRegion;  
+const dbTable = config.dynamoDBTableName;
+const C_rsshelper = require('./FeedReaderHelper');
+const rsshelper = new C_rsshelper();
 
 
 //Setting up entorno
@@ -14,7 +17,6 @@ AWS.config.update({
 });
 
 //DB Helper functions
-
 /**
  * Returns today´s CF workout from the database
  * */
@@ -52,32 +54,45 @@ function readDynamoItem(_params) {
   		    var obj = data["Item"];
   		    resolve(obj);
   		}
-	});
+	   });
     });
 }
 
 function writeDynamoItem(_item) {
-    let params = {
-        TableName : dbTable,
-        Item: _item
-    };
-    var AWS = require('aws-sdk');
-    AWS.config.update({region: AWSregion});
-    var documentClient = new AWS.DynamoDB.DocumentClient();
-    documentClient.put(params, function(err, data) {
-        console.log(data)
-        if (err) console.log(err);
-        else console.log(data);
-    });
+    try{
+        let params = {
+            TableName : dbTable,
+            Item: _item
+        };
+        console.log(params)
+        var AWS = require('aws-sdk');
+        AWS.config.update({region: AWSregion});
+        var documentClient = new AWS.DynamoDB.DocumentClient();
+        documentClient.put(params, function(err, data) {
+            if (err) console.log(err);
+            else console.log(data);
+        });
+    } catch(error) {
+        console.log(error)
+    }
 }
 
 ///Entry point
 
 exports.handler = async (event) => {
     try{
-        console.log("enteres here")
+        allWods = await rsshelper.workouts();
+        console.log("test" + await rsshelper.workouts().cf)
+        for (var x in allWods){
+            console.log("Guardando " + x)
+            writeDynamoItem(x)
+        }
+        console.log(allWods)
+        writeDynamoItem(allWods)
+        
     }
     catch(error) {
+        console.log(error)
         return error;
     }
 };
